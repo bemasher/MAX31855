@@ -1,6 +1,7 @@
 #include <avr/pgmspace.h>
 #include <util/delay.h>
 #include <stdlib.h>
+#include "MAX31855.h"
 
 // Setup pin directions and store pin values.
 MAX31855::MAX31855(int8_t SCLK, int8_t CS, int8_t MISO) {
