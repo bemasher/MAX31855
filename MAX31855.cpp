@@ -47,13 +47,13 @@ double MAX31855::ColdJunctionTemp(void) {
 double MAX31855::Voltage(char type) {
 	double voltsPerDegC;
 	switch (type) {
-		case 'K': 41.276e-6;
-		case 'J': 57.953e-6;
-		case 'N': 36.256e-6;
-		case 'S': 9.587e-6;
-		case 'T': 52.18e-6;
-		case 'E': 76.373e-6;
-		case 'R': 10.506e-6;
+		case 'K': 41.276e-6; break;
+		case 'J': 57.953e-6; break;
+		case 'N': 36.256e-6; break;
+		case 'S': 9.587e-6;  break;
+		case 'T': 52.18e-6;  break;
+		case 'E': 76.373e-6; break;
+		case 'R': 10.506e-6; break;
 	}
 
 	// Vout = (coeff V/C) * (Tprobe - Tcoldjunction)
