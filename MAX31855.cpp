@@ -46,18 +46,33 @@ double MAX31855::ColdJunctionTemp(void) {
 // correct type for this function produce correct results.
 double MAX31855::Voltage(char type) {
 	double voltsPerDegC;
+	double voltsPerDegCcoldJunction;
 	switch (type) {
-		case 'K': voltsPerDegC = 41.276e-6; break;
-		case 'J': voltsPerDegC = 57.953e-6; break;
-		case 'N': voltsPerDegC = 36.256e-6; break;
-		case 'S': voltsPerDegC = 9.587e-6;  break;
-		case 'T': voltsPerDegC = 52.18e-6;  break;
-		case 'E': voltsPerDegC = 76.373e-6; break;
-		case 'R': voltsPerDegC = 10.506e-6; break;
+		case 'K': voltsPerDegC = 41.276e-6;
+			voltsPerDegCcoldJunction = 40.73e-6;
+			break;
+		case 'J': voltsPerDegC = 57.953e-6;
+			voltsPerDegCcoldJunction = 40.73e-6;
+			break;
+		case 'N': voltsPerDegC = 36.256e-6;
+			voltsPerDegCcoldJunction = 27.171e-6;
+			break;
+		case 'S': voltsPerDegC = 9.587e-6; 
+			voltsPerDegCcoldJunction = 6.181e-6;
+			break;
+		case 'T': voltsPerDegC = 52.18e-6; 
+			voltsPerDegCcoldJunction = 41.56e-6;
+			break;
+		case 'E': voltsPerDegC = 76.373e-6;
+			voltsPerDegCcoldJunction = 44.123e-6;
+			break;
+		case 'R': voltsPerDegC = 10.506e-6;
+			voltsPerDegCcoldJunction = 6.158e-6;
+			break;
 	}
 
-	// Vout = (coeff V/C) * (Tprobe - Tcoldjunction)
-	return voltsPerDegC * (ProbeTemp() - ColdJunctionTemp());
+	// Vout = (coeff V/C TC) * Tprobe - (coeff V/C TC - coeff V/C CJ)* Tcoldjunction
+	return voltsPerDegC * ProbeTemp() - (voltsPerDegC - voltsPerDegCcoldJunction) * ColdJunctionTemp();
 }
 
 // Sign extension used for decoding temperature information of arbitrary bit length.
