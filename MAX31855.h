@@ -16,7 +16,7 @@ struct ConversionBits {
 };
 
 union Conversion {
-	uint8_t data[4];
+	uint32_t data;
 	struct ConversionBits bits;
 };
 

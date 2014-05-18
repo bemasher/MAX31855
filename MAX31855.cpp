@@ -20,10 +20,15 @@ MAX31855::MAX31855(int8_t SCLK, int8_t CS, int8_t MISO) {
 void MAX31855::NewConversion(void) {
 	// Enable chip select
 	digitalWrite(cs, LOW);
-
-	// Shift in 4 bytes (32 bits)
-	for(int idx = 3; idx >= 0; idx--) {
-		conv.data[idx] = shiftIn(miso, sclk, MSBFIRST);
+	
+	// For all 32 bits
+	for(uint8_t idx = 0; idx < 32; idx++) {
+		// Toggle clock
+		digitalWrite(sclk, HIGH);
+		// Shift in bit from MISO (MSB first)
+		conv.data = (conv.data << 1) | digitalRead(miso);
+		// Toggle clock
+		digitalWrite(sclk, LOW);
 	}
 
 	// Disable chip select
@@ -77,7 +82,10 @@ double MAX31855::Voltage(char type) {
 
 // Sign extension used for decoding temperature information of arbitrary bit length.
 int MAX31855::signExtend(int data, unsigned bits) {
-	int mask = 1 << (bits - 1);
+	// Mask only required bits
 	data &= (1 << bits) - 1;
+	
+	// Extend sign bit
+	int mask = 1 << (bits - 1);
 	return (data ^ mask) - mask;
 }
