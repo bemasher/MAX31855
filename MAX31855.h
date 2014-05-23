@@ -9,10 +9,10 @@ struct ConversionBits {
 	unsigned short GNDShort         :1;
 	unsigned short VCCShort         :1;
 	unsigned short                  :1;
-	uint16_t ColdJunctionTemp       :12;
+	int16_t ColdJunctionTemp       :12;
 	unsigned short Fault            :1;
 	unsigned short                  :1;
-	uint16_t ProbeTemp              :14;
+	int16_t ProbeTemp              :14;
 };
 
 union Conversion {
@@ -34,6 +34,4 @@ class MAX31855 {
 
 	private:
 		int8_t sclk, cs, miso;
-
-		int signExtend(int data, unsigned bits);
 };

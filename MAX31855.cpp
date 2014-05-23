@@ -37,12 +37,12 @@ void MAX31855::NewConversion(void) {
 
 // Returns probe temperature in degrees Celsius for the current conversion.
 double MAX31855::ProbeTemp(void) {
-	return signExtend(conv.bits.ProbeTemp, 14) * 0.25;
+	return conv.bits.ProbeTemp * 0.25;
 }
 
 // Returns cold junction temperature in degrees Celsius for the current conversion.
 double MAX31855::ColdJunctionTemp(void) {
-	return signExtend(conv.bits.ColdJunctionTemp, 12) * 0.0625;
+	return conv.bits.ColdJunctionTemp * 0.0625;
 }
 
 // Calculate voltage for the given thermocouple type. The constants used are
@@ -78,14 +78,4 @@ double MAX31855::Voltage(char type) {
 
 	// Vout = (coeff V/C TC) * Tprobe - (coeff V/C TC - coeff V/C CJ)* Tcoldjunction
 	return sensitivityProbe * ProbeTemp() - (sensitivityProbe - sensitivityColdJunction) * ColdJunctionTemp();
-}
-
-// Sign extension used for decoding temperature information of arbitrary bit length.
-int MAX31855::signExtend(int data, unsigned bits) {
-	// Mask only required bits
-	data &= (1 << bits) - 1;
-	
-	// Extend sign bit
-	int mask = 1 << (bits - 1);
-	return (data ^ mask) - mask;
 }
