@@ -16,23 +16,38 @@ MAX31855::MAX31855(int8_t SCLK, int8_t CS, int8_t MISO) {
 	digitalWrite(cs, HIGH);
 }
 
-// Shifts in and stores a new conversion.
+// Reads 32-bits (MSB first), one per clock pulse into data.
+//
+// Note: Interrupts are disabled during execution to reduce clock jitter.
+// Note: Intentionally split up shifting, reading and storing to generate a
+// clock signal closer to a 50% duty cycle. This probably doesn't matter much,
+// but might reduce chance of error due to noise.
 void MAX31855::NewConversion(void) {
+	noInterrupts();
+
 	// Enable chip select
 	digitalWrite(cs, LOW);
 	
+	uint8_t val;
+
 	// For all 32 bits
 	for(uint8_t idx = 0; idx < 32; idx++) {
+		// Shift left for next bit
+		conv.data <<= 1;
 		// Toggle clock
 		digitalWrite(sclk, HIGH);
-		// Shift in bit from MISO (MSB first)
-		conv.data = (conv.data << 1) | digitalRead(miso);
+		// Read bit from MISO (MSB first)
+		val = digitalRead(miso);
 		// Toggle clock
 		digitalWrite(sclk, LOW);
+		// Set bit 
+		conv.data |= val;
 	}
 
 	// Disable chip select
 	digitalWrite(cs, HIGH);
+
+	interrupts();
 }
 
 // Returns probe temperature in degrees Celsius for the current conversion.
