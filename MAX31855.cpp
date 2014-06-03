@@ -1,6 +1,7 @@
 #include <avr/pgmspace.h>
-#include <util/delay.h>
 #include <stdlib.h>
+#include <util/delay.h>
+#include <util/atomic.h>
 #include "MAX31855.h"
 
 // Setup pin directions and store pin values.
@@ -23,31 +24,29 @@ MAX31855::MAX31855(int8_t SCLK, int8_t CS, int8_t MISO) {
 // clock signal closer to a 50% duty cycle. This probably doesn't matter much,
 // but might reduce chance of error due to noise.
 void MAX31855::NewConversion(void) {
-	noInterrupts();
+	ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+		// Enable chip select
+		digitalWrite(cs, LOW);
+		
+		uint8_t val;
 
-	// Enable chip select
-	digitalWrite(cs, LOW);
-	
-	uint8_t val;
+		// For all 32 bits
+		for(uint8_t idx = 0; idx < 32; idx++) {
+			// Shift left for next bit
+			conv.data <<= 1;
+			// Toggle clock
+			digitalWrite(sclk, HIGH);
+			// Read bit from MISO (MSB first)
+			val = digitalRead(miso);
+			// Toggle clock
+			digitalWrite(sclk, LOW);
+			// Set bit 
+			conv.data |= val;
+		}
 
-	// For all 32 bits
-	for(uint8_t idx = 0; idx < 32; idx++) {
-		// Shift left for next bit
-		conv.data <<= 1;
-		// Toggle clock
-		digitalWrite(sclk, HIGH);
-		// Read bit from MISO (MSB first)
-		val = digitalRead(miso);
-		// Toggle clock
-		digitalWrite(sclk, LOW);
-		// Set bit 
-		conv.data |= val;
+		// Disable chip select
+		digitalWrite(cs, HIGH);
 	}
-
-	// Disable chip select
-	digitalWrite(cs, HIGH);
-
-	interrupts();
 }
 
 // Returns probe temperature in degrees Celsius for the current conversion.
