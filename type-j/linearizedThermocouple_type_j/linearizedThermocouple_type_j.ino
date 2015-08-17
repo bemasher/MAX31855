@@ -36,8 +36,7 @@ void loop() {
 
       double c[] = {0.000000000000E+00, 0.503811878150E-01, 0.304758369300E-04, -0.856810657200E-07, 0.132281952950E-09, -0.170529583370E-12, 0.209480906970E-15, -0.125383953360E-18, 0.156317256970E-22};
 
-      // Count the the number of coefficients. There are 10 coefficients for positive temperatures (plus three exponential coefficients),
-      // but there are 11 coefficients for negative temperatures.
+      // Count the the number of coefficients.
       int cLength = sizeof(c) / sizeof(c[0]);
 
 
@@ -99,6 +98,10 @@ void loop() {
 
     Serial.print("Corrected Temp = ");
     Serial.println(correctedTemp, 5);
+    Serial.print("Raw Temp = ");
+    Serial.println(rawTemp, 5);
+    Serial.print("Internal temp = ")
+    Serial.println(internalTemp, 5);
     Serial.println("");
 
   }
