@@ -7,106 +7,102 @@
 Adafruit_MAX31855 thermocouple(CLK, CS, DO);
 
 void setup() {
-   Serial.begin(9600);
-   Serial.println("MAX31855 test");
-   // wait for MAX chip to stabilize
-   delay(500);
+  Serial.begin(9600);
+  Serial.println("MAX31855 test");
+  // wait for MAX chip to stabilize
+  delay(500);
 }
 void loop() {
-   // Initialize variables.
-   int i = 0; // Counter for arrays
-   double internalTemp = thermocouple.readInternal(); // Read the internal temperature of the MAX31855.
-   double rawTemp = thermocouple.readCelsius(); // Read the temperature of the thermocouple. This temp is compensated for cold junction temperature.
-   double thermocoupleVoltage= 0;
-   double internalVoltage = 0;
-   double correctedTemp = 0;
+  // Initialize variables.
+  int i = 0; // Counter for arrays
+  double internalTemp = thermocouple.readInternal(); // Read the internal temperature of the MAX31855.
+  double rawTemp = thermocouple.readCelsius(); // Read the temperature of the thermocouple. This temp is compensated for cold junction temperature.
+  double thermocoupleVoltage = 0;
+  double internalVoltage = 0;
+  double correctedTemp = 0;
 
-    // Check to make sure thermocouple is working correctly.
-   if (isnan(rawTemp)) {
+  // Check to make sure thermocouple is working correctly.
+  if (isnan(rawTemp)) {
     Serial.println("Something wrong with thermocouple!");
   }
-   else {
-      // Steps 1 & 2. Subtract cold junction temperature from the raw thermocouple temperature.
-      thermocoupleVoltage = (rawTemp - internalTemp)*0.041276;  // C * mv/C = mV
+  else {
+    // Steps 1 & 2. Subtract cold junction temperature from the raw thermocouple temperature.
+    thermocoupleVoltage = (rawTemp - internalTemp) * 0.057953; // C * mv/C = mV
 
-      // Step 3. Calculate the cold junction equivalent thermocouple voltage.
+    // Step 3. Calculate the cold junction equivalent thermocouple voltage.
 
-      if (internalTemp >= 0) { // For positive temperatures use appropriate NIST coefficients
-         // Coefficients and equations available from http://srdata.nist.gov/its90/download/type_k.tab
+    if (internalTemp >= -210.00 && internalTemp < 760.00) { //for temperatures between -210C to +760C use appropriate NIST coefficients
+      // Coefficients and equations available from http://srdata.nist.gov/its90/download/type_j.tab
 
-         double c[] = {-0.176004136860E-01,  0.389212049750E-01,  0.185587700320E-04, -0.994575928740E-07,  0.318409457190E-09, -0.560728448890E-12,  0.560750590590E-15, -0.320207200030E-18,  0.971511471520E-22, -0.121047212750E-25};
+      double c[] = {0.000000000000E+00, 0.503811878150E-01, 0.304758369300E-04, -0.856810657200E-07, 0.132281952950E-09, -0.170529583370E-12, 0.209480906970E-15, -0.125383953360E-18, 0.156317256970E-22};
 
-         // Count the the number of coefficients. There are 10 coefficients for positive temperatures (plus three exponential coefficients),
-         // but there are 11 coefficients for negative temperatures.
-         int cLength = sizeof(c) / sizeof(c[0]);
-
-         // Exponential coefficients. Only used for positive temperatures.
-         double a0 =  0.118597600000E+00;
-         double a1 = -0.118343200000E-03;
-         double a2 =  0.126968600000E+03;
+      // Count the the number of coefficients. There are 10 coefficients for positive temperatures (plus three exponential coefficients),
+      // but there are 11 coefficients for negative temperatures.
+      int cLength = sizeof(c) / sizeof(c[0]);
 
 
-         // From NIST: E = sum(i=0 to n) c_i t^i + a0 exp(a1 (t - a2)^2), where E is the thermocouple voltage in mV and t is the temperature in degrees C.
-         // In this case, E is the cold junction equivalent thermocouple voltage.
-         // Alternative form: C0 + C1*internalTemp + C2*internalTemp^2 + C3*internalTemp^3 + ... + C10*internaltemp^10 + A0*e^(A1*(internalTemp - A2)^2)
-         // This loop sums up the c_i t^i components.
-         for (i = 0; i < cLength; i++) {
-            internalVoltage += c[i] * pow(internalTemp, i);
-         }
-            // This section adds the a0 exp(a1 (t - a2)^2) components.
-            internalVoltage += a0 * exp(a1 * pow((internalTemp - a2), 2));
+      // From NIST: E = sum(i=0 to n) c_i t^i.
+      // This loop sums up the c_i t^i components.
+      for (i = 0; i < cLength; i++) {
+        internalVoltage += c[i] * pow(internalTemp, i);
       }
-      else if (internalTemp < 0) { // for negative temperatures
-         double c[] = {0.000000000000E+00,  0.394501280250E-01,  0.236223735980E-04 - 0.328589067840E-06, -0.499048287770E-08, -0.675090591730E-10, -0.574103274280E-12, -0.310888728940E-14, -0.104516093650E-16, -0.198892668780E-19, -0.163226974860E-22};
+    }
+    else if (internalTemp <= 1200.00) { // for temperatures between 760C and 1200C.
+      double c[] = {0.296456256810E+03, -0.149761277860E+01, 0.317871039240E-02, -0.318476867010E-05, 0.157208190040E-08, -0.306913690560E-12};
 
-         // Count the number of coefficients.
-         int cLength = sizeof(c) / sizeof(c[0]);
+      // Count the number of coefficients.
+      int cLength = sizeof(c) / sizeof(c[0]);
 
-         // Below 0 degrees Celsius, the NIST formula is simpler and has no exponential components: E = sum(i=0 to n) c_i t^i
-         for (i = 0; i < cLength; i++) {
-            internalVoltage += c[i] * pow(internalTemp, i) ;
-         }
+      // Below 0 degrees Celsius, the NIST formula is simpler and has no exponential components: E = sum(i=0 to n) c_i t^i
+      for (i = 0; i < cLength; i++) {
+        internalVoltage += c[i] * pow(internalTemp, i) ;
       }
+    } else { // NIST only has data for J-type thermocouples from -210C to +1200C. If the temperature is not in that range, set temp to impossible value.
+      // Error handling should be improved.
+      Serial.print("Temperature is out of range. This should never happen.");
+      internalVoltage = NAN;
+    }
 
-      // Step 4. Add the cold junction equivalent thermocouple voltage calculated in step 3 to the thermocouple voltage calculated in step 2.
-      double totalVoltage = thermocoupleVoltage + internalVoltage;
+    // Step 4. Add the cold junction equivalent thermocouple voltage calculated in step 3 to the thermocouple voltage calculated in step 2.
+    double totalVoltage = thermocoupleVoltage + internalVoltage;
 
-      // Step 5. Use the result of step 4 and the NIST voltage-to-temperature (inverse) coefficients to calculate the cold junction compensated, linearized temperature value.
-      // The equation is in the form correctedTemp = d_0 + d_1*E + d_2*E^2 + ... + d_n*E^n, where E is the totalVoltage in mV and correctedTemp is in degrees C.
-      // NIST uses different coefficients for different temperature subranges: (-200 to 0C), (0 to 500C) and (500 to 1372C).
-      if (totalVoltage < 0) { // Temperature is between -200 and 0C.
-         double d[] = {0.0000000E+00, 2.5173462E+01, -1.1662878E+00, -1.0833638E+00, -8.9773540E-01, -3.7342377E-01, -8.6632643E-02, -1.0450598E-02, -5.1920577E-04, 0.0000000E+00};
+    // Step 5. Use the result of step 4 and the NIST voltage-to-temperature (inverse) coefficients to calculate the cold junction compensated, linearized temperature value.
+    // The equation is in the form correctedTemp = d_0 + d_1*E + d_2*E^2 + ... + d_n*E^n, where E is the totalVoltage in mV and correctedTemp is in degrees C.
+    // NIST uses different coefficients for different temperature subranges: (-210 to 0C), (0 to 760C) and (760 to 1200C).
+    if (totalVoltage < 0) { // Temperature is between -210C and 0C.
+      double d[] = {0.0000000E+00, 1.9528268E+01, -1.2286185E+00, -1.0752178E+00, -5.9086933E-01, -1.7256713E-01, -2.8131513E-02, -2.3963370E-03, -8.3823321E-05};
 
-         int dLength = sizeof(d) / sizeof(d[0]);
-         for (i = 0; i < dLength; i++) {
-            correctedTemp += d[i] * pow(totalVoltage, i);
-         }
+      int dLength = sizeof(d) / sizeof(d[0]);
+      for (i = 0; i < dLength; i++) {
+        correctedTemp += d[i] * pow(totalVoltage, i);
       }
-      else if (totalVoltage < 20.644) { // Temperature is between 0C and 500C.
-         double d[] = {0.000000E+00, 2.508355E+01, 7.860106E-02, -2.503131E-01, 8.315270E-02, -1.228034E-02, 9.804036E-04, -4.413030E-05, 1.057734E-06, -1.052755E-08};
-         int dLength = sizeof(d) / sizeof(d[0]);
-         for (i = 0; i < dLength; i++) {
-            correctedTemp += d[i] * pow(totalVoltage, i);
-         }
+    }
+
+    else if (totalVoltage < 42.919) { // Temperature is between 0C and 760C.
+      double d[] = {0.000000E+00, 1.978425E+01, -2.001204E-01, 1.036969E-02, -2.549687E-04, 3.585153E-06, -5.344285E-08, 5.099890E-10, 0.000000E+00};
+      int dLength = sizeof(d) / sizeof(d[0]);
+      for (i = 0; i < dLength; i++) {
+        correctedTemp += d[i] * pow(totalVoltage, i);
       }
-      else if (totalVoltage < 54.886 ) { // Temperature is between 500C and 1372C.
-         double d[] = {-1.318058E+02, 4.830222E+01, -1.646031E+00, 5.464731E-02, -9.650715E-04, 8.802193E-06, -3.110810E-08, 0.000000E+00, 0.000000E+00, 0.000000E+00};
-         int dLength = sizeof(d) / sizeof(d[0]);
-         for (i = 0; i < dLength; i++) {
-            correctedTemp += d[i] * pow(totalVoltage, i);
-         }
-      } else { // NIST only has data for K-type thermocouples from -200C to +1372C. If the temperature is not in that range, set temp to impossible value.
-         // Error handling should be improved.
-         Serial.print("Temperature is out of range. This should never happen.");
-         correctedTemp = NAN;
+    }
+    else if (totalVoltage < 69.553 ) { // Temperature is between 500C and 1372C.
+      double d[] = { -3.11358187E+03, 3.00543684E+02, -9.94773230E+00, 1.70276630E-01, -1.43033468E-03, 4.73886084E-06, 0.00000000E+00, 0.00000000E+00, 0.00000000E+00};
+      int dLength = sizeof(d) / sizeof(d[0]);
+      for (i = 0; i < dLength; i++) {
+        correctedTemp += d[i] * pow(totalVoltage, i);
       }
+    } else { // NIST only has data for J-type thermocouples from -210C to +1200C. If the temperature is not in that range, set temp to impossible value.
+      // Error handling should be improved.
+      Serial.print("Temperature is out of range. This should never happen.");
+      correctedTemp = NAN;
+    }
 
-      Serial.print("Corrected Temp = ");
-      Serial.println(correctedTemp, 5);
-      Serial.println("");
+    Serial.print("Corrected Temp = ");
+    Serial.println(correctedTemp, 5);
+    Serial.println("");
 
-   }
+  }
 
-   delay(1000);
+  delay(1000);
 
 }
